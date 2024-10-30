@@ -1,70 +1,1193 @@
 <!DOCTYPE html>
-<html>
- <head>
-   <title>Upload Image</title>
-   <link rel="stylesheet" href="{{url_for('static',filename='css/login-1.css')}}">
-      <link rel="stylesheet" href="{{url_for('static',filename='css/style.css')}}">
-      <style>
+<html lang="en">
 
-      </style>
- </head>
- <body>
-    </head>
-    <body>
-        
-        <div id="main-app">
-            <div id="header">
-            <h5 style="position: relative; left: 30px"> <i class="fa fa-align-left"></i>Handwriting Recognition</h5>
-                
-            </div>
-            <div id="dashboard" style="display: flex;">
-            <ul>
-                <li><a href= "{{url_for('upload')}}"><i class="fa fa-upload"></i>  Upload Image</a></li>
-                <li><a href="about.html"><i class="fa fa-desktop"></i>  About</a></li>
-                <li>
-                    <a href="{{url_for('login')}}"><i class="fa fa-user"></i>  Logout </a>
-					
-                </li>
-                
-                </ul>
-                <div id="home-content" style="margin-left: 20vw;">
-                
-                
- 
-                  <!--  <center><h2>Kindly Upload Image Below To Extract Characters</h2></center>-->
-                    <div>
-            
-       {% if msg %}
-       <h1>{{ msg }}</h1>
-       {% endif %}
-      
-       <h1>Upload new File</h1>
-      
-       <form method=post enctype=multipart/form-data>
-         <p><input type=file name=file>
-            <input type=submit value=Upload>
-       </form>
-    
-       <h1>Result:</h1>
-   {% if img_src %}
-     <img src="{{ img_src }}">
-   {% endif %}
-      
-       {% if extracted_text %}
-         <p> The extracted text from the image above is: </p>
-            <div id="output" style="height: 150px; width: 70vw;
-            overflow-y: scroll;"> {{ extracted_text }} 
-          </div>
-      
-       {% else %}
-         The extracted text will be displayed here
-       {% endif %}
-              
-      </div>
-                    
-               
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TEXTIFY AI</title>
+    <link rel="icon" href="{{ url_for('static', filename='css/images/textify.png') }}" type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/upload.css') }}" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <style>
+        /* General Styles */
+        :root {
+            --primary-color: #6c63ff;
+            --secondary-color: #8a2be2;
+            --text-color: #333;
+            --bg-color: #f8f9fa;
+            --accent-color: #ff6b6b;
+        }
+
+        body {
+            font-family: "Poppins", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            min-height: 1vh;
+            display: flex;
+            flex-direction: column;
+            padding-top: 10px;
+            /* Adjust this value based on your navbar height */
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .navbar {
+            z-index: 100;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            transition: color 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            color: var(--secondary-color);
+        }
+
+        .nav-link {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color);
+        }
+
+        h1 {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        p {
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 40px, 0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        .fadeInUp {
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .upload-container {
+                padding: 20px;
+            }
+        }
+
+        /* Header and Navigation */
+
+        nav ul {
+            list-style-type: none;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav ul li {
+            margin-left: 1rem;
+        }
+
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        nav ul li a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main Content */
+        main {
+            padding: 2rem 0;
+        }
+
+        .upload-section,
+        .result-section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        /* Dropzone */
+        .dropzone {
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dropzone:hover,
+        .dropzone.drag-over {
+            border-color: #6c63ff;
+            background-color: rgba(108, 99, 255, 0.05);
+        }
+
+        .dropzone i {
+            color: #6c63ff;
+            margin-bottom: 1rem;
+        }
+
+        #file-info {
+            margin-top: 1rem;
+            font-style: italic;
+        }
+
+        /* Buttons */
+        .upload-button,
+        .clear-button,
+        .copy-button,
+        .download-button {
+            background-color: #6c63ff;
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1rem;
+            margin-right: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .upload-button:hover,
+        .clear-button:hover,
+        .copy-button:hover,
+        .download-button:hover {
+            background-color: #5349d1;
+        }
+
+        .clear-button {
+            background-color: #f44336;
+        }
+
+        .clear-button:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Loading Indicator */
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .loading i {
+            color: #6c63ff;
+        }
+
+        /* Preview Container */
+        .preview-container {
+            margin-top: 1rem;
+            text-align: center;
+            max-width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .preview-container img,
+        .preview-container embed {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* Result Section */
+        .result-section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .result-flex-container {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        /* Preview Container */
+        .preview-container {
+            flex: 1;
+            max-width: 50%;
+            height: 400px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .preview-container img,
+        .preview-container embed {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* Result Container */
+        .result-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .text-output {
+            width: 100%;
+            height: 300px;
+            padding: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: vertical;
+            margin-bottom: 1rem;
+        }
+
+        .text-stats {
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .result-flex-container {
+                flex-direction: column;
+            }
+
+            .preview-container {
+                max-width: 100%;
+                height: 300px;
+                margin-bottom: 1rem;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            .upload-button,
+            .clear-button,
+            .copy-button,
+            .download-button {
+                width: 100%;
+            }
+        }
+
+        #loginSuccessPopup {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            text-align: center;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            text-align: center;
+            min-width: 250px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            display: none;
+            animation: slideDown 0.3s ease, fadeOut 0.3s ease 2.7s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translate(-50%, -100%);
+            }
+
+            to {
+                transform: translate(-50%, 0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .toast.success {
+            background-color: #4caf50;
+        }
+
+        .toast.error {
+            background-color: #f44336;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            nav ul {
+                margin-top: 1rem;
+            }
+
+            nav ul li {
+                margin-left: 0;
+                margin-right: 1rem;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            .upload-button,
+            .clear-button,
+            .copy-button,
+            .download-button {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        /* General Styles */
+        body {
+            font-family: "Roboto", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            transition: background-color 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header and Navigation */
+        header {
+            background-color: #6c63ff;
+            color: #fff;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo p {
+            margin: 0;
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        nav ul {
+            list-style-type: none;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav ul li {
+            margin-left: 1.5rem;
+        }
+
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        nav ul li a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        main {
+            padding: 3rem 0;
+        }
+
+        .upload-section,
+        .result-section {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            margin-bottom: 3rem;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover,
+        .result-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #6c63ff;
+            padding-bottom: 0.5rem;
+        }
+
+        /* Dropzone */
+        .dropzone {
+            border: 3px dashed #ccc;
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dropzone:hover,
+        .dropzone.drag-over {
+            border-color: #6c63ff;
+            background-color: rgba(108, 99, 255, 0.05);
+            transform: scale(1.02);
+        }
+
+        .dropzone i {
+            color: #6c63ff;
+            margin-bottom: 1rem;
+            font-size: 3.5rem;
+        }
+
+        #file-info {
+            margin-top: 1.5rem;
+            font-style: italic;
+            color: #666;
+        }
+
+        /* Buttons */
+        .upload-button,
+        .clear-button,
+        .copy-button,
+        .download-button {
+            background-color: #6c63ff;
+            color: #fff;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            margin-right: 1rem;
+            margin-top: 1.5rem;
+            box-shadow: 0 2px 10px rgba(108, 99, 255, 0.3);
+        }
+
+        .upload-button:hover,
+        .clear-button:hover,
+        .copy-button:hover,
+        .download-button:hover {
+            background-color: #5349d1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+        }
+
+        .clear-button {
+            background-color: #f44336;
+        }
+
+        .clear-button:hover {
+            background-color: #d32f2f;
+        }
+
+        /* Loading Indicator */
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .loading i {
+            color: #6c63ff;
+            font-size: 2rem;
+        }
+
+        /* Preview Container */
+        .preview-container {
+            margin-top: 2rem;
+            text-align: center;
+            max-width: 100%;
+            height: 300px;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .preview-container:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .preview-container img,
+        .preview-container embed {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        /* Result Section */
+        .result-flex-container {
+            display: flex;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        /* Result Container */
+        .result-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .text-output {
+            width: 100%;
+            height: 300px;
+            padding: 1.5rem;
+            border: 2px solid #ccc;
+            border-radius: 12px;
+            font-size: 1rem;
+            line-height: 1.6;
+            resize: vertical;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .text-output:focus {
+            border-color: #6c63ff;
+            box-shadow: 0 0 10px rgba(108, 99, 255, 0.2);
+        }
+
+        .text-stats {
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            color: #666;
+            background-color: #f0f2f5;
+            padding: 0.8rem;
+            border-radius: 8px;
+        }
+
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .toast.success {
+            background-color: #4caf50;
+        }
+
+        .toast.error {
+            background-color: #f44336;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            color: #666;
+            font-size: 1rem;
+            padding: 1rem 0;
+            border-top: 1px solid #ccc;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            nav ul {
+                margin-top: 1rem;
+            }
+
+            nav ul li {
+                margin-left: 0;
+                margin-right: 1rem;
+            }
+
+            .result-flex-container {
+                flex-direction: column;
+            }
+
+            .preview-container {
+                max-width: 100%;
+                height: 250px;
+                margin-bottom: 1.5rem;
+            }
+
+            .button-container {
+                flex-direction: column;
+            }
+
+            .upload-button,
+            .clear-button,
+            .copy-button,
+            .download-button {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .upload-button:active,
+        .clear-button:active,
+        .copy-button:active,
+        .download-button:active {
+            animation: pulse 0.3s ease;
+        }
+
+        .navbar-nav {
+            margin-left: auto;
+        }
+
+        .nav-item {
+            margin-left: 1.5rem;
+        }
+
+        @media (max-width: 991px) {
+            .navbar-nav {
+                margin-left: 0;
+            }
+
+            .nav-item {
+                margin-left: 0;
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        .navbar-toggler {
+            font-size: 1.25rem;
+        }
+
+        /* button group css */
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .upload-button,
+        .clear-button {
+            flex: 0 1 auto;
+        }
+
+        @media (max-width: 576px) {
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .upload-button,
+            .clear-button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        .result-button-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .result-button {
+            flex: 0 1 auto;
+            background-color: #6c63ff;
+            color: #fff;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            box-shadow: 0 2px 10px rgba(108, 99, 255, 0.3);
+        }
+
+        .result-button:hover {
+            background-color: #5349d1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .result-button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .result-button {
+                width: 100%;
+                max-width: 300px;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm fixed-top">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <img src="{{ url_for('static', filename='css/images/textify.png') }}" alt="TEXTIFY Logo" height="45"
+                        class="d-inline-block align-top" />
+                    TEXTIFY
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('upload') }}">
+                                <i class="fas fa-upload"></i> Upload Image
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('about') }}">
+                                <i class="fas fa-info-circle"></i> Contact Us
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
+        </nav>
+        <div id="loginSuccessPopup" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="mr-auto">Login Successful</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                Welcome back! You have successfully logged in.
+            </div>
         </div>
-    </body>
+        <main>
+            <section class="upload-section">
+                <h2>Upload new File</h2>
+                <form id="upload-form" enctype="multipart/form-data">
+                    <div id="dropzone" class="dropzone">
+                        <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                        <p><b><strong>Drag & Drop your file here or click to select</strong></b></p>
+                        <p>
+                            Transform your images/pdf into editable text instantly with our
+                            advanced Optical Character Recognition (OCR) technology. Just
+                            upload and watch as text is effortlessly extracted and ready for
+                            use!
+                        </p>
+                        <input type="file" id="file-input" name="file" accept="image/*,.pdf" hidden />
+                    </div>
+                    <div id="file-info"></div>
+                    <div class="button-group">
+                        <button type="submit" class="upload-button">
+                            Upload & Extract Text
+                        </button>
+                        <button type="button" id="clear-button" class="clear-button">
+                            Clear
+                        </button>
+                    </div>
+                </form>
+                <div id="loading" class="loading">
+                    <i class="fas fa-spinner fa-spin"></i> Processing...
+                </div>
+            </section>
+
+            <section id="result-section" class="result-section" style="display: none">
+                <h2>Result:</h2>
+                <div class="result-flex-container">
+                    <div id="preview-container" class="preview-container"></div>
+                    <div id="result-container" class="result-container">
+                        <textarea id="text-output" class="text-output"
+                            placeholder="Extracted text will appear here..."></textarea>
+                        <div class="text-stats">
+                            Characters: <span id="char-count">0</span> | Words:
+                            <span id="word-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-button-group">
+                    <button id="copy-button" class="result-button" type="button">
+                        <i class="far fa-copy"></i> Copy Text
+                    </button>
+                    <button id="download-txt-button" class="result-button" type="button">
+                        <i class="fas fa-file-alt"></i> Download as TXT
+                    </button>
+                    <button id="download-pdf-button" class="result-button" type="button">
+                        <i class="fas fa-file-pdf"></i> Download as PDF
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Textify. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dropzone = document.getElementById("dropzone");
+            const fileInput = document.getElementById("file-input");
+            const fileInfo = document.getElementById("file-info");
+            const previewContainer = document.getElementById("preview-container");
+            const uploadForm = document.getElementById("upload-form");
+            const loadingIndicator = document.getElementById("loading");
+            const textOutput = document.getElementById("text-output");
+            const charCount = document.getElementById("char-count");
+            const wordCount = document.getElementById("word-count");
+            const copyButton = document.getElementById("copy-button");
+            const downloadTxtButton = document.getElementById(
+                "download-txt-button"
+            );
+            const downloadPdfButton = document.getElementById(
+                "download-pdf-button"
+            );
+            const clearButton = document.getElementById("clear-button");
+
+            toggleClearButton(false); // Hide clear button on page load
+            const toast = document.getElementById("toast");
+            const resultSection = document.getElementById("result-section");
+
+            // File upload and preview
+            function handleFileSelect(file) {
+                if (file) {
+                    fileInfo.textContent = `Selected file: ${file.name}`;
+                    showPreview(file);
+                    toggleClearButton(true); // Show clear button
+                } else {
+                    fileInfo.textContent = "";
+                    previewContainer.innerHTML = "";
+                    toggleClearButton(false); // Hide clear button
+                }
+            }
+
+            dropzone.addEventListener("click", () => fileInput.click());
+            dropzone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                dropzone.classList.add("drag-over");
+            });
+            dropzone.addEventListener("dragleave", () =>
+                dropzone.classList.remove("drag-over")
+            );
+            dropzone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropzone.classList.remove("drag-over");
+                handleFileSelect(e.dataTransfer.files[0]);
+            });
+            fileInput.addEventListener("change", () =>
+                handleFileSelect(fileInput.files[0])
+            );
+
+            function showPreview(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewContainer.innerHTML = "";
+                    if (file.type.startsWith("image/")) {
+                        const img = document.createElement("img");
+                        img.src = e.target.result;
+                        previewContainer.appendChild(img);
+                    } else if (file.type === "application/pdf") {
+                        const embed = document.createElement("embed");
+                        embed.src = e.target.result;
+                        embed.type = "application/pdf";
+                        embed.width = "100%";
+                        embed.height = "100%";
+                        previewContainer.appendChild(embed);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Text extraction
+            uploadForm.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const file = fileInput.files[0];
+                if (!file) {
+                    showToast("Please select a file", "error");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("file", file);
+                loadingIndicator.style.display = "block";
+
+                try {
+                    const response = await fetch("/extract_text", {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    if (!response.ok) throw new Error("Text extraction failed");
+
+                    const data = await response.json();
+                    textOutput.value = data.extracted_text;
+                    updateTextStats();
+                    resultSection.style.display = "block";
+                    showToast("Text extracted successfully", "success");
+                } catch (error) {
+                    console.error("Error:", error);
+                    showToast("An error occurred during text extraction", "error");
+                } finally {
+                    loadingIndicator.style.display = "none";
+                }
+            });
+
+            // Text statistics
+            textOutput.addEventListener("input", updateTextStats);
+
+            function updateTextStats() {
+                const text = textOutput.value;
+                charCount.textContent = text.length;
+                wordCount.textContent = text
+                    .trim()
+                    .split(/\s+/)
+                    .filter(Boolean).length;
+            }
+            // Copy to clipboard
+            copyButton.addEventListener("click", () => {
+                const text = textOutput.value;
+                if (text.trim() === "") {
+                    showToast("No text to copy", "error");
+                    return;
+                }
+                navigator.clipboard
+                    .writeText(text)
+                    .then(() => showToast("Text copied to clipboard", "success"))
+                    .catch(() => showToast("Failed to copy text", "error"));
+            });
+
+            // Download as TXT
+            downloadTxtButton.addEventListener("click", () => {
+                const text = textOutput.value;
+                if (text.trim() === "") {
+                    showToast("No text to download", "error");
+                    return;
+                }
+                const blob = new Blob([text], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "extracted_text.txt";
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            // Download as PDF
+            downloadPdfButton.addEventListener("click", () => {
+                const text = textOutput.value;
+                if (text.trim() === "") {
+                    showToast("No text to download", "error");
+                    return;
+                }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                const splitText = doc.splitTextToSize(text, 180);
+                doc.text(splitText, 15, 15);
+                doc.save("extracted_text.pdf");
+            });
+
+            // Clear form and result
+            clearButton.addEventListener("click", () => {
+                fileInput.value = "";
+                fileInfo.textContent = "";
+                previewContainer.innerHTML = "";
+                textOutput.value = "";
+                updateTextStats();
+                resultSection.style.display = "none";
+                toggleClearButton(false); // Hide clear button
+                showToast("Form cleared", "success");
+            });
+
+            // Toast notification
+            function showToast(message, type) {
+                toast.textContent = message;
+                toast.className = `toast ${type}`;
+                toast.style.display = "block";
+                toast.style.opacity = "1";
+                setTimeout(() => {
+                    toast.style.opacity = "0";
+                    setTimeout(() => {
+                        toast.style.display = "none";
+                    }, 300);
+                }, 3700);
+            }
+        });
+        document.addEventListener("DOMContentLoaded", function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const loginSuccess = urlParams.get('login_success');
+
+            if (loginSuccess === '1') {
+                const loginSuccessPopup = new bootstrap.Toast(document.getElementById('loginSuccessPopup'), {
+                    autohide: true,
+                    delay: 3000
+                });
+                loginSuccessPopup.show();
+            }
+        });
+        function toggleClearButton(show) {
+            const clearButton = document.getElementById("clear-button");
+            clearButton.style.display = show ? "inline-block" : "none";
+        }
+    </script>
+</body>
+
 </html>

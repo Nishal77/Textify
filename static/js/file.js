@@ -9,4 +9,4 @@ let stringChecker = (textToCheck) => {
 		windows.alert("unknown value for username")
 	}
 }
-stringChecker("username")
+stringChecker("username") 
